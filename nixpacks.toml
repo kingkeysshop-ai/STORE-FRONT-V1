@@ -1,9 +1,0 @@
-providers = ["node"]
-
-[phases.setup]
-
-[phases.build]
-cmds = [
-  "npm ci",
-  "npm run build"
-]
