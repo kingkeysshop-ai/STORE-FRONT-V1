@@ -8,7 +8,7 @@
         "setup": {},
         "build": {
           "cmds": [
-            "npm ci --only=production=false",
+            "npm install --include=dev --no-audit --no-fund",
             "npm run build"
           ]
         }
