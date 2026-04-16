@@ -9,4 +9,8 @@
 - [x] Test `npm run build` locally (executed successfully)
 - [ ] Verify Docker build succeeds
 
-**Status:** Build errors fixed. Docker stage-0 should now pass.
+**Status:** Next.js local build fixed. Railway Nixpacks failure identified.
+
+**New Issue:** Nix `nix-env -if nixpkgs-*.nix` fails (nodejs-20 package).
+
+**Next Fix:** Simplify railway.json/nixpacks.toml to use default Node.js detection.
