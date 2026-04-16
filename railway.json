@@ -5,9 +5,7 @@
     "nixpacksPlan": {
       "providers": ["node"],
       "phases": {
-        "setup": {
-          "nixPkgs": ["nodejs-20"]
-        },
+        "setup": {},
         "build": {
           "cmds": [
             "npm ci --only=production=false",
