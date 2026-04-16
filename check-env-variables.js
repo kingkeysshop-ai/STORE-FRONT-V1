@@ -10,6 +10,14 @@ const requiredEnvs = [
 ]
 
 function checkEnvVariables() {
+  // Skip env check in production/CI/Railway
+  if (process.env.NODE_ENV === 'production' || 
+      process.env.RAILWAY_ENVIRONMENT || 
+      process.env.CI) {
+    console.log(c.yellow('⚠️  Skipping env var check in production/CI'));
+    return;
+  }
+
   const missingEnvs = requiredEnvs.filter(function (env) {
     return !process.env[env.key]
   })
