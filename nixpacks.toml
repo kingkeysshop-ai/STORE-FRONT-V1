@@ -4,6 +4,6 @@ providers = ["node"]
 
 [phases.build]
 cmds = [
-  "npm install --include=dev --no-audit --no-fund",
+  "npm ci",
   "npm run build"
 ]
