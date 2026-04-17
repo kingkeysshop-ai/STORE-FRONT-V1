@@ -20,7 +20,7 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer }) => {
   }
 
   const [state, formAction] = useActionState(updatePassword, {
-    error: false,
+    error: "",
     success: false,
   })
 
