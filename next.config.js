@@ -23,6 +23,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  output: 'standalone',
   images: {
     remotePatterns: [
       // localhost solo en desarrollo, nunca en produccion
