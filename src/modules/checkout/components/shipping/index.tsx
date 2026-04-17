@@ -47,11 +47,16 @@ const Shipping: React.FC<ShippingProps> = ({ cart, availableShippingMethods }) =
 
   const isOpen = searchParams.get("step") === "delivery"
 
-  const _shippingMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type !== "pickup"
-  )
   const _pickupMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type === "pickup"
+    (sm) =>
+      sm.data?.["type"] === "pickup" ||
+      sm.data?.["method_type"] === "pickup" ||
+      sm.name?.toLowerCase().includes("pickup") ||
+      sm.name?.toLowerCase().includes("recoger")
+  )
+
+  const _shippingMethods = availableShippingMethods?.filter(
+    (sm) => !_pickupMethods?.some((pickup) => pickup.id === sm.id)
   )
   const hasPickupOptions = !!_pickupMethods?.length
 
@@ -204,7 +209,11 @@ const Shipping: React.FC<ShippingProps> = ({ cart, availableShippingMethods }) =
                           <MedusaRadio checked={option.id === shippingMethodId} />
                           <div className="flex flex-col">
                             <span className="text-white">{option.name}</span>
-                            <span className="text-gray-400 text-xs">{formatAddress(option.service_zone?.fulfillment_set?.location?.address)}</span>
+                            <span className="text-gray-400 text-xs">
+                              {option.data?.["pickup_address"]
+                                ? String(option.data["pickup_address"])
+                                : "Dirección disponible al confirmar recogida"}
+                            </span>
                           </div>
                         </div>
                         <span className="text-yellow-400 font-bold">
