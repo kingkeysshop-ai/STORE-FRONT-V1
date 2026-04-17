@@ -39,11 +39,11 @@ const Hero = () => {
       {/* Brillo dorado parallax */}
       <div
         className="absolute top-[-15%] left-1/2 w-[700px] h-[700px] rounded-full bg-yellow-400 opacity-[0.06] blur-[120px] pointer-events-none"
-        style={{ transform: `translateY(${scrollY * 0.25}px) translateX(-50%)` }}
+        style={{ transform: "translateY(" + (scrollY * 0.25) + "px) translateX(-50%)" }}
       />
       <div className="absolute bottom-0 right-[-10%] w-[400px] h-[400px] rounded-full bg-yellow-500 opacity-[0.04] blur-[100px] pointer-events-none" />
 
-      {/* Particulas flotantes */}
+      {/* Partículas flotantes */}
       {PARTICLES.map((p) => (
         <span
           key={p.id}
@@ -51,15 +51,15 @@ const Hero = () => {
           style={{
             width: p.size,
             height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
+            left: p.x + "%",
+            top: p.y + "%",
             opacity: p.opacity,
-            animation: `heroFloat ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
+            animation: "heroFloat " + p.duration + "s ease-in-out " + p.delay + "s infinite alternate",
           }}
         />
       ))}
 
-      {/* Grid de puntos de fondo */}
+      {/* Grid de puntos */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
@@ -68,7 +68,7 @@ const Hero = () => {
         }}
       />
 
-      {/* Contenido principal */}
+      {/* Contenido */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 md:px-12 gap-6 py-24">
 
         {/* Badge */}
@@ -86,7 +86,7 @@ const Hero = () => {
           </span>
         </div>
 
-        {/* Titulo KING / KEYS */}
+        {/* Título KING KEYS */}
         <div
           className="flex flex-col items-center leading-none"
           style={{
@@ -115,7 +115,7 @@ const Hero = () => {
           </h1>
         </div>
 
-        {/* Subtitulo */}
+        {/* Subtítulo */}
         <div
           style={{
             transition: "opacity 700ms ease-out 300ms, transform 700ms ease-out 300ms",
@@ -125,8 +125,8 @@ const Hero = () => {
         >
           <p className="text-lg md:text-xl text-gray-400 max-w-lg leading-relaxed">
             Las mejores licencias digitales al mejor precio.{" "}
-            <span className="text-yellow-400/80 font-semibold">Windows, Office, antivirus y más</span>
-            {" "}— activación inmediata garantizada.
+            <span className="text-yellow-400/80 font-semibold">Windows, Office, antivirus y más</span>{" "}
+            — activación inmediata garantizada.
           </p>
         </div>
 
@@ -178,11 +178,12 @@ const Hero = () => {
 
       {/* Scroll Indicator */}
       <div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         style={{
           transition: "opacity 700ms ease-out 900ms, transform 700ms ease-out 900ms",
           opacity: mounted && scrollY < 80 ? 1 : 0,
           transform: mounted && scrollY < 80 ? "translateY(0)" : "translateY(12px)",
+          pointerEvents: "none",
         }}
       >
         <span className="text-[10px] text-gray-600 uppercase tracking-[0.2em]">Scroll</span>
@@ -194,7 +195,7 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* Linea decorativa inferior */}
+      {/* Línea inferior */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent" />
 
       {/* Keyframes */}

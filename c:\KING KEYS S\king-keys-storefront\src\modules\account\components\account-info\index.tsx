@@ -66,14 +66,7 @@ const AccountInfo = ({
       </div>
 
       <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
-            { "max-h-[100px] opacity-100": isSuccess, "max-h-0 opacity-0": !isSuccess }
-          )}
-          data-testid="success-message"
-        >
+        <Disclosure.Panel static className={clx("transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden", { "max-h-[100px] opacity-100": isSuccess, "max-h-0 opacity-0": !isSuccess })} data-testid="success-message">
           <div className="mt-3 bg-green-900/30 border border-green-500/30 rounded-lg px-4 py-2">
             <span className="text-green-400 text-xs font-semibold">✅ {label} actualizado correctamente</span>
           </div>
@@ -81,14 +74,7 @@ const AccountInfo = ({
       </Disclosure>
 
       <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
-            { "max-h-[100px] opacity-100": isError, "max-h-0 opacity-0": !isError }
-          )}
-          data-testid="error-message"
-        >
+        <Disclosure.Panel static className={clx("transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden", { "max-h-[100px] opacity-100": isError, "max-h-0 opacity-0": !isError })} data-testid="error-message">
           <div className="mt-3 bg-red-900/30 border border-red-500/30 rounded-lg px-4 py-2">
             <span className="text-red-400 text-xs font-semibold">⚠️ {errorMessage}</span>
           </div>
@@ -96,13 +82,7 @@ const AccountInfo = ({
       </Disclosure>
 
       <Disclosure>
-        <Disclosure.Panel
-          static
-          className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-visible",
-            { "max-h-[1000px] opacity-100": state, "max-h-0 opacity-0": !state }
-          )}
-        >
+        <Disclosure.Panel static className={clx("transition-[max-height,opacity] duration-300 ease-in-out overflow-visible", { "max-h-[1000px] opacity-100": state, "max-h-0 opacity-0": !state })}>
           <div className="flex flex-col gap-4 pt-4 mt-4 border-t border-gray-700">
             <div>{children}</div>
             <div className="flex justify-end">
@@ -110,12 +90,7 @@ const AccountInfo = ({
                 type="submit"
                 disabled={pending}
                 data-testid="save-button"
-                className={clx(
-                  "px-6 py-2.5 rounded-lg text-sm font-black transition-all duration-200",
-                  pending
-                    ? "bg-yellow-400/50 text-gray-900/50 cursor-not-allowed"
-                    : "bg-yellow-400 text-gray-900 hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95"
-                )}
+                className={clx("px-6 py-2.5 rounded-lg text-sm font-black transition-all duration-200", pending ? "bg-yellow-400/50 text-gray-900/50 cursor-not-allowed" : "bg-yellow-400 text-gray-900 hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95")}
               >
                 {pending ? "Guardando..." : "Guardar Cambios"}
               </button>
