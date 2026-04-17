@@ -1,4 +1,4 @@
-
+"use client"
 import React, { useActionState } from "react"
 import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
