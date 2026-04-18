@@ -13,10 +13,9 @@
     "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build"
-},
+  },
   "dependencies": {
     "@chakra-ui/react": "^3.34.0",
-    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@headlessui/react": "^2.2.0",
