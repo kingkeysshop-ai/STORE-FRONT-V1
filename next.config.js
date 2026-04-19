@@ -11,6 +11,13 @@ const isDev = process.env.NODE_ENV === "development"
  */
 const nextConfig = {
   reactStrictMode: true,
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "use-sync-external-store/shim/index.js": require.resolve("use-sync-external-store/shim"),
+    }
+    return config
+  },
   logging: {
     fetches: {
       fullUrl: true,
@@ -23,7 +30,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'standalone',
+  // ✅ REMOVIDO: output: 'standalone' - Interfiere con CSS en Railway
   images: {
     remotePatterns: [
       // localhost solo en desarrollo, nunca en produccion

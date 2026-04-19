@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="es" data-mode="light" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <KingKeysChakraProvider>
           <main className="relative">{props.children}</main>
