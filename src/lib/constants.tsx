@@ -39,6 +39,10 @@ export const paymentInfoMap: Record<
     title: "Criptomonedas",
     icon: <Cryptomus />,
   },
+  pp_aurpay_aurpay: {
+    title: "Aurpay",
+    icon: <CreditCard />,
+  },
 }
 
 export const isStripeLike = (providerId?: string) => {
@@ -57,6 +61,10 @@ export const isManual = (providerId?: string) => {
 
 export const isCryptomus = (providerId?: string) => {
   return providerId?.startsWith("pp_cryptomus")
+}
+
+export const isAurpay = (providerId?: string) => {
+  return providerId?.startsWith("pp_aurpay")
 }
 
 export const noDivisionCurrencies = [
