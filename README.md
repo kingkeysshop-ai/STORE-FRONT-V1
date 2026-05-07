@@ -125,3 +125,4 @@ You'll also need to setup the integrations in your Medusa server. See the [Medus
 - [Documentation](https://nextjs.org/docs)
 # store-front-king-keys
 # STORE-FRONT-V1
+# STORE-FRONT-V1
