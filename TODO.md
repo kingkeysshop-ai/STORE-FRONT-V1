@@ -1,12 +1,20 @@
-# Sidebar Animation Improvements
+# Railway + Medusa v1 Readiness
 
-## Plan Execution Steps:
+## Plan Execution Steps
 
-- [ ] 1. Create TODO.md with checklist ✅
-- [ ] 2. Add custom CSS animations (keyframes + .animate-slide-in-left class) to side-menu/index.tsx
-- [ ] 3. Update menu li elements with staggered delay classes (delay-[0ms], delay-[60ms], etc.)
-- [ ] 4. Test animations and mark complete
-- [ ] 5. Show final file to user for review
+- [x] 1. Analyze Medusa v1 compatibility and deployment config
+- [ ] 2. Update Docker runtime consistency (Node 24)
+- [ ] 3. Improve environment validation for deploy/runtime safety
+- [ ] 4. Ensure scripts enforce env checks on build/start
+- [ ] 5. Validate critical path (build/start + health endpoint)
+- [ ] 6. Summarize final deploy checklist for Railway
 
-**Target file:** `storefront/src/modules/layout/components/side-menu/index.tsx`
-**Status:** In progress
+## Target Files
+- `Dockerfile`
+- `check-env-variables.js`
+- `package.json`
+- `README.md` (optional docs alignment)
+
+## Notes
+- User requested execution of items: 1, 2, 4, 5 from the proposed checklist and Dockerfile update.
+- Focus is Railway deployment readiness with Medusa v1 storefront compatibility.

@@ -35,12 +35,12 @@ export const paymentInfoMap: Record<
     title: "Manual Payment",
     icon: <CreditCard />,
   },
-  pp_cryptomus_cryptomus: {
+    pp_cryptomus_cryptomus: {
     title: "Criptomonedas",
     icon: <Cryptomus />,
   },
   pp_aurpay_aurpay: {
-    title: "Aurpay",
+    title: "Aurpay (Crypto)",
     icon: <CreditCard />,
   },
 }
