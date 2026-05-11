@@ -73,13 +73,13 @@ async function getCountryCode(
 ) {
   let countryCode
 
-  const vercelCountryCode = request.headers
-    .get("x-vercel-ip-country")
-    ?.toLowerCase()
+  // ✅ FIX: Manejo seguro de vercelCountryCode
+  const vercelHeader = request.headers.get("x-vercel-ip-country")
+  const vercelCountryCode = vercelHeader ? String(vercelHeader).toLowerCase() : undefined
 
-  // ✅ FIX CRÍTICO: Cambiar sintaxis de optional chaining
+  // ✅ FIX: Manejo seguro de urlCountryCode
   const pathParts = request.nextUrl.pathname.split("/")
-  const urlCountryCode = pathParts ? pathParts.toLowerCase() : undefined
+  const urlCountryCode = pathParts ? String(pathParts).toLowerCase() : undefined
 
   console.log("🌍 URL country code:", urlCountryCode)
   console.log("🌍 Vercel country code:", vercelCountryCode)
