@@ -14,17 +14,13 @@ async function getRegionMap(cacheId: string) {
   const { regionMap, regionMapUpdated } = regionMapCache
 
   if (!BACKEND_URL) {
-    throw new Error(
-      "Middleware.ts: BACKEND_URL no está configurado. Verifica MEDUSA_BACKEND_URL en variables de entorno."
-    )
+    throw new Error("BACKEND_URL no configurado")
   }
 
   if (
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
-    console.log("🔄 Fetching regions from:", `${BACKEND_URL}/store/regions`)
-
     const response = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -34,111 +30,110 @@ async function getRegionMap(cacheId: string) {
       cache: "no-store",
     })
 
-    console.log("📊 Regions response status:", response.status)
-
     if (!response.ok) {
-      const text = await response.text()
-      console.log("❌ Regions response body (first 500 chars):", text.substring(0, 500))
-      throw new Error(`Failed to fetch regions: ${response.status} - ${text}`)
+      throw new Error(`Failed to fetch regions: ${response.status}`)
     }
 
     const json = await response.json()
     const regions = json.regions
 
-    console.log("✅ Regions found:", regions?.length ?? 0)
-
     if (!regions?.length) {
-      throw new Error(
-        "No regions found. Por favor configura regiones en Medusa Admin."
-      )
+      throw new Error("No regions found")
     }
 
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
-        console.log(`  ✓ Mapeado: ${c.iso_2} → ${region.name}`)
       })
     })
 
     regionMapCache.regionMapUpdated = Date.now()
-    console.log("🗺️ Region map actualizado. Total países mapeados:", regionMapCache.regionMap.size)
   }
 
   return regionMapCache.regionMap
 }
 
-async function getCountryCode(
+function getCountryCode(
   request: NextRequest,
   regionMap: Map<string, HttpTypes.StoreRegion | number>
-) {
-  let countryCode
+): string | undefined {
+  // Obtener el primer segmento de la ruta
+  const pathname = request.nextUrl.pathname
+  const segments = pathname.split("/").filter(Boolean) // Elimina strings vacíos
 
-  // ✅ FIX: Manejo seguro de vercelCountryCode
-  const vercelHeader = request.headers.get("x-vercel-ip-country")
-  const vercelCountryCode = vercelHeader ? String(vercelHeader).toLowerCase() : undefined
-
-  // ✅ FIX: Manejo seguro de urlCountryCode
-  const pathParts = request.nextUrl.pathname.split("/")
-  const urlCountryCode = pathParts ? String(pathParts).toLowerCase() : undefined
-
-  console.log("🌍 URL country code:", urlCountryCode)
-  console.log("🌍 Vercel country code:", vercelCountryCode)
-  console.log("🌍 Default region:", DEFAULT_REGION)
-  console.log("🗺️ Region map keys:", Array.from(regionMap.keys()).join(", "))
-
-  if (urlCountryCode && regionMap.has(urlCountryCode)) {
-    countryCode = urlCountryCode
-    console.log(`✅ Country code from URL: ${countryCode}`)
-  } else if (vercelCountryCode && regionMap.has(vercelCountryCode)) {
-    countryCode = vercelCountryCode
-    console.log(`✅ Country code from Vercel header: ${countryCode}`)
-  } else if (regionMap.has(DEFAULT_REGION)) {
-    countryCode = DEFAULT_REGION
-    console.log(`✅ Country code from DEFAULT_REGION: ${countryCode}`)
-  } else if (regionMap.keys().next().value) {
-    countryCode = regionMap.keys().next().value
-    console.log(`✅ Country code from first in map: ${countryCode}`)
-  } else {
-    console.log("❌ No country code found!")
+  // Si el primer segmento existe y está en el regionMap, es un país válido
+  if (segments && regionMap.has(segments)) {
+    return segments
   }
 
-  console.log("📍 Final country code:", countryCode)
-  return countryCode
+  // Si no, intentar con Vercel header
+  const vercelHeader = request.headers.get("x-vercel-ip-country")
+  if (vercelHeader) {
+    const vercelCountryCode = String(vercelHeader).toLowerCase()
+    if (regionMap.has(vercelCountryCode)) {
+      return vercelCountryCode
+    }
+  }
+
+  // Si no, usar DEFAULT_REGION si existe en el map
+  if (regionMap.has(DEFAULT_REGION)) {
+    return DEFAULT_REGION
+  }
+
+  // Si no, usar el primer país disponible
+  return regionMap.keys().next().value
 }
 
 export async function middleware(request: NextRequest) {
   try {
-    console.log("\n" + "=".repeat(60))
-    console.log(`🚀 MIDDLEWARE START - Path: ${request.nextUrl.pathname}`)
-    console.log("=".repeat(60))
-
-    let redirectUrl = request.nextUrl.href
-    let response = NextResponse.redirect(redirectUrl, 307)
-    let cacheIdCookie = request.cookies.get("_medusa_cache_id")
-    let cacheId = cacheIdCookie?.value || crypto.randomUUID()
-
-    console.log("🔑 Cache ID:", cacheId)
-
-    const regionMap = await getRegionMap(cacheId)
-    console.log("📦 Region map size:", regionMap.size)
-
-    const countryCode = regionMap && (await getCountryCode(request, regionMap))
-
-    // ✅ FIX: Sintaxis más robusta
-    const pathParts = request.nextUrl.pathname.split("/")
-    const firstPathSegment = pathParts || ""
-    const urlHasCountryCode = countryCode && firstPathSegment === countryCode
-
-    console.log("🔍 URL has country code:", urlHasCountryCode)
-    console.log("🔍 Country code value:", countryCode)
-
-    if (urlHasCountryCode && cacheIdCookie) {
-      console.log("✅ URL has country code + cache ID → NEXT")
+    // Ignorar rutas estáticas
+    if (request.nextUrl.pathname.includes(".")) {
       return NextResponse.next()
     }
 
-    if (urlHasCountryCode && !cacheIdCookie) {
-      console.log("✅ URL has country code but no cache ID → SET COOKIE + REDIRECT")
+    let cacheIdCookie = request.cookies.get("_medusa_cache_id")
+    let cacheId = cacheIdCookie?.value || crypto.randomUUID()
+
+    const regionMap = await getRegionMap(cacheId)
+
+    if (!regionMap.size) {
+      return new NextResponse("No regions configured", { status: 500 })
+    }
+
+    const countryCode = getCountryCode(request, regionMap)
+
+    if (!countryCode) {
+      return new NextResponse("No valid region found", { status: 500 })
+    }
+
+    const pathname = request.nextUrl.pathname
+    const segments = pathname.split("/").filter(Boolean)
+
+    // ✅ CRÍTICO: Si el primer segmento YA es el country code, NO redirigir
+    if (segments === countryCode) {
+      // Ya estamos en la ruta correcta
+      if (!cacheIdCookie) {
+        const response = NextResponse.next()
+        response.cookies.set("_medusa_cache_id", cacheId, {
+          maxAge: 60 * 60 * 24,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        })
+        return response
+      }
+      return NextResponse.next()
+    }
+
+    // ✅ Si no está en la ruta correcta, redirigir UNA SOLA VEZ
+    const newPathname = `/${countryCode}${pathname}`
+    const response = NextResponse.redirect(
+      new URL(newPathname, request.url),
+      307
+    )
+
+    if (!cacheIdCookie) {
       response.cookies.set("_medusa_cache_id", cacheId, {
         maxAge: 60 * 60 * 24,
         httpOnly: true,
@@ -146,49 +141,12 @@ export async function middleware(request: NextRequest) {
         sameSite: "lax",
         path: "/",
       })
-      return response
     }
 
-    if (request.nextUrl.pathname.includes(".")) {
-      console.log("✅ Static asset detected → NEXT")
-      return NextResponse.next()
-    }
-
-    const redirectPath =
-      request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
-    const queryString = request.nextUrl.search ? request.nextUrl.search : ""
-
-    if (!urlHasCountryCode && countryCode) {
-      redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
-      console.log(`🔄 Redirecting to: ${redirectUrl}`)
-      response = NextResponse.redirect(`${redirectUrl}`, 307)
-    } else if (!urlHasCountryCode && !countryCode) {
-      console.log("❌ No valid country code found → ERROR 500")
-      return new NextResponse(
-        "No valid regions configured. Please set up regions with countries in your Medusa Admin.",
-        { status: 500 }
-      )
-    }
-
-    console.log("✅ MIDDLEWARE END - SUCCESS")
-    console.log("=".repeat(60) + "\n")
     return response
 
   } catch (error) {
-    console.error("\n" + "❌".repeat(30))
-    console.error("🚨 MIDDLEWARE ERROR CRÍTICO:")
-    console.error({
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      path: request.nextUrl.pathname,
-      url: request.url,
-      backend_url: BACKEND_URL,
-      has_api_key: !!PUBLISHABLE_API_KEY,
-      timestamp: new Date().toISOString(),
-    })
-    console.error("❌".repeat(30) + "\n")
-
-    console.log("⚠️ Dejando pasar request sin middleware processing")
+    console.error("Middleware error:", error)
     return NextResponse.next()
   }
 }
