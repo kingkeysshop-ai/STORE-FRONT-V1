@@ -3,12 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 const BACKEND_URL = process.env.MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
-
-// LOGS TEMPORALES - BORRAR DESPUÉS
-console.log("BACKEND_URL:", BACKEND_URL)
-console.log("API_KEY:", PUBLISHABLE_API_KEY ? "SET ✓" : "NOT SET ✗")
-console.log("DEFAULT_REGION:", DEFAULT_REGION)
+const DEFAULT_REGION = process.env.DEFAULT_REGION || process.env.NEXT_PUBLIC_DEFAULT_REGION || "co"
 
 const regionMapCache = {
   regionMap: new Map<string, HttpTypes.StoreRegion>(),
@@ -28,8 +23,6 @@ async function getRegionMap(cacheId: string) {
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
-    console.log("Fetching regions from:", `${BACKEND_URL}/store/regions`)
-
     const response = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -39,18 +32,12 @@ async function getRegionMap(cacheId: string) {
       cache: "no-store",
     })
 
-    console.log("Regions response status:", response.status)
-
     if (!response.ok) {
-      const text = await response.text()
-      console.log("Regions response body:", text.substring(0, 200))
       throw new Error(`Failed to fetch regions: ${response.status}`)
     }
 
     const json = await response.json()
     const regions = json.regions
-
-    console.log("Regions found:", regions?.length ?? 0)
 
     if (!regions?.length) {
       throw new Error(
@@ -58,7 +45,6 @@ async function getRegionMap(cacheId: string) {
       )
     }
 
-    // Create a map of country codes to regions.
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
@@ -104,9 +90,6 @@ async function getCountryCode(
   }
 }
 
-/**
- * Middleware to handle region selection and onboarding status.
- */
 export async function middleware(request: NextRequest) {
   try {
     let redirectUrl = request.nextUrl.href
