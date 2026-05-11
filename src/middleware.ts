@@ -53,7 +53,6 @@ async function getRegionMap(cacheId: string) {
       )
     }
 
-    // Create a map of country codes to regions.
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
@@ -68,11 +67,6 @@ async function getRegionMap(cacheId: string) {
   return regionMapCache.regionMap
 }
 
-/**
- * Fetches regions from Medusa and sets the region cookie.
- * @param request
- * @param response
- */
 async function getCountryCode(
   request: NextRequest,
   regionMap: Map<string, HttpTypes.StoreRegion | number>
@@ -83,7 +77,9 @@ async function getCountryCode(
     .get("x-vercel-ip-country")
     ?.toLowerCase()
 
-  const urlCountryCode = request.nextUrl.pathname.split("/")?.toLowerCase()
+  // ✅ FIX CRÍTICO: Cambiar sintaxis de optional chaining
+  const pathParts = request.nextUrl.pathname.split("/")
+  const urlCountryCode = pathParts ? pathParts.toLowerCase() : undefined
 
   console.log("🌍 URL country code:", urlCountryCode)
   console.log("🌍 Vercel country code:", vercelCountryCode)
@@ -110,9 +106,6 @@ async function getCountryCode(
   return countryCode
 }
 
-/**
- * Middleware to handle region selection and onboarding status.
- */
 export async function middleware(request: NextRequest) {
   try {
     console.log("\n" + "=".repeat(60))
@@ -120,34 +113,30 @@ export async function middleware(request: NextRequest) {
     console.log("=".repeat(60))
 
     let redirectUrl = request.nextUrl.href
-
     let response = NextResponse.redirect(redirectUrl, 307)
-
     let cacheIdCookie = request.cookies.get("_medusa_cache_id")
-
     let cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
     console.log("🔑 Cache ID:", cacheId)
 
     const regionMap = await getRegionMap(cacheId)
-
     console.log("📦 Region map size:", regionMap.size)
 
     const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
-    const urlHasCountryCode =
-      countryCode && request.nextUrl.pathname.split("/").includes(countryCode)
+    // ✅ FIX: Sintaxis más robusta
+    const pathParts = request.nextUrl.pathname.split("/")
+    const firstPathSegment = pathParts || ""
+    const urlHasCountryCode = countryCode && firstPathSegment === countryCode
 
     console.log("🔍 URL has country code:", urlHasCountryCode)
     console.log("🔍 Country code value:", countryCode)
 
-    // if one of the country codes is in the url and the cache id is set, return next
     if (urlHasCountryCode && cacheIdCookie) {
       console.log("✅ URL has country code + cache ID → NEXT")
       return NextResponse.next()
     }
 
-    // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
     if (urlHasCountryCode && !cacheIdCookie) {
       console.log("✅ URL has country code but no cache ID → SET COOKIE + REDIRECT")
       response.cookies.set("_medusa_cache_id", cacheId, {
@@ -157,11 +146,9 @@ export async function middleware(request: NextRequest) {
         sameSite: "lax",
         path: "/",
       })
-
       return response
     }
 
-    // check if the url is a static asset
     if (request.nextUrl.pathname.includes(".")) {
       console.log("✅ Static asset detected → NEXT")
       return NextResponse.next()
@@ -169,17 +156,14 @@ export async function middleware(request: NextRequest) {
 
     const redirectPath =
       request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
-
     const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
-    // If no country code is set, we redirect to the relevant region.
     if (!urlHasCountryCode && countryCode) {
       redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
       console.log(`🔄 Redirecting to: ${redirectUrl}`)
       response = NextResponse.redirect(`${redirectUrl}`, 307)
     } else if (!urlHasCountryCode && !countryCode) {
       console.log("❌ No valid country code found → ERROR 500")
-      // Handle case where no valid country code exists (empty regions)
       return new NextResponse(
         "No valid regions configured. Please set up regions with countries in your Medusa Admin.",
         { status: 500 }
@@ -204,7 +188,6 @@ export async function middleware(request: NextRequest) {
     })
     console.error("❌".repeat(30) + "\n")
 
-    // Si falla el middleware, deja pasar sin redirigir
     console.log("⚠️ Dejando pasar request sin middleware processing")
     return NextResponse.next()
   }
