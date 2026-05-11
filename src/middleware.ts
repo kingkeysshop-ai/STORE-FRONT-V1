@@ -5,6 +5,11 @@ const BACKEND_URL = process.env.MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
 
+// LOGS TEMPORALES - BORRAR DESPUÉS
+console.log("BACKEND_URL:", BACKEND_URL)
+console.log("API_KEY:", PUBLISHABLE_API_KEY ? "SET ✓" : "NOT SET ✗")
+console.log("DEFAULT_REGION:", DEFAULT_REGION)
+
 const regionMapCache = {
   regionMap: new Map<string, HttpTypes.StoreRegion>(),
   regionMapUpdated: Date.now(),
@@ -23,6 +28,8 @@ async function getRegionMap(cacheId: string) {
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
+    console.log("Fetching regions from:", `${BACKEND_URL}/store/regions`)
+
     const response = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -32,12 +39,18 @@ async function getRegionMap(cacheId: string) {
       cache: "no-store",
     })
 
+    console.log("Regions response status:", response.status)
+
     if (!response.ok) {
+      const text = await response.text()
+      console.log("Regions response body:", text.substring(0, 200))
       throw new Error(`Failed to fetch regions: ${response.status}`)
     }
 
     const json = await response.json()
     const regions = json.regions
+
+    console.log("Regions found:", regions?.length ?? 0)
 
     if (!regions?.length) {
       throw new Error(
@@ -149,7 +162,6 @@ export async function middleware(request: NextRequest) {
     return response
 
   } catch (error) {
-    // Si falla el middleware, deja pasar la request sin redirigir
     console.error("Middleware error:", error)
     return NextResponse.next()
   }
