@@ -15,7 +15,7 @@ async function getRegionMap(cacheId: string) {
 
   if (!BACKEND_URL) {
     throw new Error(
-      "Middleware.ts: Error fetching regions. Did you set up regions in your Medusa Admin and define a MEDUSA_BACKEND_URL environment variable? Note that the variable is no longer named NEXT_PUBLIC_MEDUSA_BACKEND_URL."
+      "Middleware.ts: BACKEND_URL no está configurado. Verifica MEDUSA_BACKEND_URL en variables de entorno."
     )
   }
 
@@ -23,6 +23,8 @@ async function getRegionMap(cacheId: string) {
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
+    console.log("🔄 Fetching regions from:", `${BACKEND_URL}/store/regions`)
+
     const response = await fetch(`${BACKEND_URL}/store/regions`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_API_KEY!,
@@ -32,66 +34,91 @@ async function getRegionMap(cacheId: string) {
       cache: "no-store",
     })
 
+    console.log("📊 Regions response status:", response.status)
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch regions: ${response.status}`)
+      const text = await response.text()
+      console.log("❌ Regions response body (first 500 chars):", text.substring(0, 500))
+      throw new Error(`Failed to fetch regions: ${response.status} - ${text}`)
     }
 
     const json = await response.json()
     const regions = json.regions
 
+    console.log("✅ Regions found:", regions?.length ?? 0)
+
     if (!regions?.length) {
       throw new Error(
-        "No regions found. Please set up regions in your Medusa Admin."
+        "No regions found. Por favor configura regiones en Medusa Admin."
       )
     }
 
+    // Create a map of country codes to regions.
     regions.forEach((region: HttpTypes.StoreRegion) => {
       region.countries?.forEach((c) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+        console.log(`  ✓ Mapeado: ${c.iso_2} → ${region.name}`)
       })
     })
 
     regionMapCache.regionMapUpdated = Date.now()
+    console.log("🗺️ Region map actualizado. Total países mapeados:", regionMapCache.regionMap.size)
   }
 
   return regionMapCache.regionMap
 }
 
+/**
+ * Fetches regions from Medusa and sets the region cookie.
+ * @param request
+ * @param response
+ */
 async function getCountryCode(
   request: NextRequest,
   regionMap: Map<string, HttpTypes.StoreRegion | number>
 ) {
-  try {
-    let countryCode
+  let countryCode
 
-    const vercelCountryCode = request.headers
-      .get("x-vercel-ip-country")
-      ?.toLowerCase()
+  const vercelCountryCode = request.headers
+    .get("x-vercel-ip-country")
+    ?.toLowerCase()
 
-    const urlCountryCode = request.nextUrl.pathname.split("/")?.toLowerCase()
+  const urlCountryCode = request.nextUrl.pathname.split("/")?.toLowerCase()
 
-    if (urlCountryCode && regionMap.has(urlCountryCode)) {
-      countryCode = urlCountryCode
-    } else if (vercelCountryCode && regionMap.has(vercelCountryCode)) {
-      countryCode = vercelCountryCode
-    } else if (regionMap.has(DEFAULT_REGION)) {
-      countryCode = DEFAULT_REGION
-    } else if (regionMap.keys().next().value) {
-      countryCode = regionMap.keys().next().value
-    }
+  console.log("🌍 URL country code:", urlCountryCode)
+  console.log("🌍 Vercel country code:", vercelCountryCode)
+  console.log("🌍 Default region:", DEFAULT_REGION)
+  console.log("🗺️ Region map keys:", Array.from(regionMap.keys()).join(", "))
 
-    return countryCode
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        "Middleware.ts: Error getting the country code. Did you set up regions in your Medusa Admin and define a MEDUSA_BACKEND_URL environment variable? Note that the variable is no longer named NEXT_PUBLIC_MEDUSA_BACKEND_URL."
-      )
-    }
+  if (urlCountryCode && regionMap.has(urlCountryCode)) {
+    countryCode = urlCountryCode
+    console.log(`✅ Country code from URL: ${countryCode}`)
+  } else if (vercelCountryCode && regionMap.has(vercelCountryCode)) {
+    countryCode = vercelCountryCode
+    console.log(`✅ Country code from Vercel header: ${countryCode}`)
+  } else if (regionMap.has(DEFAULT_REGION)) {
+    countryCode = DEFAULT_REGION
+    console.log(`✅ Country code from DEFAULT_REGION: ${countryCode}`)
+  } else if (regionMap.keys().next().value) {
+    countryCode = regionMap.keys().next().value
+    console.log(`✅ Country code from first in map: ${countryCode}`)
+  } else {
+    console.log("❌ No country code found!")
   }
+
+  console.log("📍 Final country code:", countryCode)
+  return countryCode
 }
 
+/**
+ * Middleware to handle region selection and onboarding status.
+ */
 export async function middleware(request: NextRequest) {
   try {
+    console.log("\n" + "=".repeat(60))
+    console.log(`🚀 MIDDLEWARE START - Path: ${request.nextUrl.pathname}`)
+    console.log("=".repeat(60))
+
     let redirectUrl = request.nextUrl.href
 
     let response = NextResponse.redirect(redirectUrl, 307)
@@ -100,18 +127,29 @@ export async function middleware(request: NextRequest) {
 
     let cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
+    console.log("🔑 Cache ID:", cacheId)
+
     const regionMap = await getRegionMap(cacheId)
+
+    console.log("📦 Region map size:", regionMap.size)
 
     const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
     const urlHasCountryCode =
       countryCode && request.nextUrl.pathname.split("/").includes(countryCode)
 
+    console.log("🔍 URL has country code:", urlHasCountryCode)
+    console.log("🔍 Country code value:", countryCode)
+
+    // if one of the country codes is in the url and the cache id is set, return next
     if (urlHasCountryCode && cacheIdCookie) {
+      console.log("✅ URL has country code + cache ID → NEXT")
       return NextResponse.next()
     }
 
+    // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
     if (urlHasCountryCode && !cacheIdCookie) {
+      console.log("✅ URL has country code but no cache ID → SET COOKIE + REDIRECT")
       response.cookies.set("_medusa_cache_id", cacheId, {
         maxAge: 60 * 60 * 24,
         httpOnly: true,
@@ -123,7 +161,9 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
+    // check if the url is a static asset
     if (request.nextUrl.pathname.includes(".")) {
+      console.log("✅ Static asset detected → NEXT")
       return NextResponse.next()
     }
 
@@ -132,20 +172,40 @@ export async function middleware(request: NextRequest) {
 
     const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
+    // If no country code is set, we redirect to the relevant region.
     if (!urlHasCountryCode && countryCode) {
       redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
+      console.log(`🔄 Redirecting to: ${redirectUrl}`)
       response = NextResponse.redirect(`${redirectUrl}`, 307)
     } else if (!urlHasCountryCode && !countryCode) {
+      console.log("❌ No valid country code found → ERROR 500")
+      // Handle case where no valid country code exists (empty regions)
       return new NextResponse(
         "No valid regions configured. Please set up regions with countries in your Medusa Admin.",
         { status: 500 }
       )
     }
 
+    console.log("✅ MIDDLEWARE END - SUCCESS")
+    console.log("=".repeat(60) + "\n")
     return response
 
   } catch (error) {
-    console.error("Middleware error:", error)
+    console.error("\n" + "❌".repeat(30))
+    console.error("🚨 MIDDLEWARE ERROR CRÍTICO:")
+    console.error({
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      path: request.nextUrl.pathname,
+      url: request.url,
+      backend_url: BACKEND_URL,
+      has_api_key: !!PUBLISHABLE_API_KEY,
+      timestamp: new Date().toISOString(),
+    })
+    console.error("❌".repeat(30) + "\n")
+
+    // Si falla el middleware, deja pasar sin redirigir
+    console.log("⚠️ Dejando pasar request sin middleware processing")
     return NextResponse.next()
   }
 }
